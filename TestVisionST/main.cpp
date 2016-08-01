@@ -1,9 +1,9 @@
 #include "Main.h"
-//#include "CameraParameter.h"
 
 // 카메라 연결하기 위한 함수 // 버퍼, 파라메타 초기화
 int OnCameraConnect()						
 {
+	size = IMAGE_HEIGHT * IMAGE_WIDTH * 6;
 	void* m_hwnd = NULL;					// 윈도우 핸들러 값
 	int ret = 0;							// return 값
 
@@ -12,7 +12,7 @@ int OnCameraConnect()
 
 	wholeImg = Mat(IMAGE_HEIGHT, IMAGE_WIDTH*BAYER_OVERHEADER, CV_8UC1);			// 전체를 수신받을 버퍼 초기화
 	
-	for(int idx = 0; idx < 4; idx++)
+	for(int idx = 0; idx < CAMERA_NUMBER; idx++)
 	{
 		imgColor[idx] = Mat(IMAGE_HEIGHT, IMAGE_WIDTH, CV_8UC3);		
 		cameraImg[idx] = Mat(IMAGE_HEIGHT, IMAGE_WIDTH, CV_8UC1);
@@ -20,47 +20,21 @@ int OnCameraConnect()
 	}
 
 	// 파라메타 값 설정
-	SetExposure(EXPOSURE_INIT_VALUE);		// SetExposure, Gain 값 설정 (밝기)
-	SetGlobalGain(GLOBAL_GAIN_INIT_VALUE);
-	SetRedGain(RED_GAIN_INIT_VALUE);
-	SetGreenGain(GREEN_GAIN_INIT_VALUE);
-	SetBlueGain(BLUE_GAIN_INIT_VALUE);
-
+	SetParam(EXPOSURE_INIT_VALUE, GLOBAL_GAIN_INIT_VALUE, RED_GAIN_INIT_VALUE, GREEN_GAIN_INIT_VALUE, BLUE_GAIN_INIT_VALUE);		// SetExposure, Gain 값 설정 (밝기)
 	vstpleoraGetImageSize(&size);											// 이미지 사이즈
 	receiveImage = vstpleoraGetImage(wholeImg.data, size);					// 이미지 받아오기
-	videoWrite.open("windows1.avi" , CV_FOURCC('X', 'V', 'I', 'D'), 30, Size(IMAGE_WIDTH, IMAGE_HEIGHT), true); // 동영상 저장하는 lib
 	return ret;								// 카메라 연결 값 리턴 (연결되었으면 1, 아니면 0)
 }
 
 // 파라메타 
-void SetExposure(int pos)
+void SetParam(int posExposure, int posGlobalGain, int posRedGain, int posGreenGain, int posBlueGain)
 {	
-	cis_mt9m025_control(MT9M025_SLAVE_ADDR, CIS_EXPOSURE_ADDR, 0xFFFF & (pos>>0));
-	return;
-}
-
-void SetGlobalGain(int pos)
-{	
-	cis_mt9m025_control(MT9M025_SLAVE_ADDR, CIS_GAIN_ADDR, 0xFFFF & (pos>>0));
-	return;
-}
-
-void SetRedGain(int pos)
-{	
-	cis_mt9m025_control(MT9M025_SLAVE_ADDR, CIS_RED_ADDR, 0xFFFF & (pos>>0));
-	return;
-}
-
-void SetGreenGain(int pos)
-{
-	cis_mt9m025_control(MT9M025_SLAVE_ADDR, CIS_GREEN1_ADDR, 0xFFFF & (pos>>0));
-	cis_mt9m025_control(MT9M025_SLAVE_ADDR, CIS_GREEN2_ADDR, 0xFFFF & (pos>>0));
-	return;
-}
-
-void SetBlueGain(int pos)
-{	
-	cis_mt9m025_control(MT9M025_SLAVE_ADDR, CIS_BLUE_ADDR, 0xFFFF & (pos>>0));
+	cis_mt9m025_control(MT9M025_SLAVE_ADDR, CIS_EXPOSURE_ADDR, 0xFFFF & (posExposure>>0));	// SetExposure
+	cis_mt9m025_control(MT9M025_SLAVE_ADDR, CIS_GAIN_ADDR, 0xFFFF & (posGlobalGain>>0));	// SetGlobalGain
+	cis_mt9m025_control(MT9M025_SLAVE_ADDR, CIS_RED_ADDR, 0xFFFF & (posRedGain>>0));		// SetRedGain
+	cis_mt9m025_control(MT9M025_SLAVE_ADDR, CIS_GREEN1_ADDR, 0xFFFF & (posGreenGain>>0));	// SetGreenGain
+	cis_mt9m025_control(MT9M025_SLAVE_ADDR, CIS_GREEN2_ADDR, 0xFFFF & (posGreenGain>>0));
+	cis_mt9m025_control(MT9M025_SLAVE_ADDR, CIS_BLUE_ADDR, 0xFFFF & (posBlueGain>>0));		// SetBlueGain
 	return;
 }
 
@@ -91,19 +65,17 @@ int uart_cmd_3byte(uchar c, uchar addr, uchar data0, uchar data1)
 void SeparationBuffer(uchar *buf, uchar **cameraBuf, int width, int height)
 {
 	// 폭 인덱스
-
 	int xrow = 0;
 	int singleStep = 0;
 	int wholeStep = 0;
 	
-	for(int y=0; y<height; y++)		// 이미지 높이 만큼 반복
+	for(int yy=0; yy<height; yy++)		// 이미지 높이 만큼 반복
 	{
-		singleStep = y * width;		// 이미지의 행은 
-		wholeStep = y * 7680;		// 수신 버퍼의 전체 폭
+		singleStep = yy * width;		// 이미지의 행은 
+		wholeStep = yy * 7680;		// 수신 버퍼의 전체 폭
 		for(int xx=0; xx<width; xx++)	// 이미지 폭 만큼 반복
 		{		
 			xrow=xx*6;			// 카메라별 폭 인덱스
-			
 			cameraBuf[0][singleStep + xx] = buf[wholeStep + (xrow+0)];			// 3채널 버퍼이므로 같은 값을 3곳에 넣음
 			cameraBuf[1][singleStep + xx] = buf[wholeStep + (xrow+2)];			// 3채널 버퍼이므로 같은 값을 3곳에 넣음
 			cameraBuf[2][singleStep + xx] = buf[wholeStep + (xrow+3)];			// 3채널 버퍼이므로 같은 값을 3곳에 넣음
@@ -117,12 +89,12 @@ void getImage()
 {
 	vstpleoraGetImageSize(&size);											// 이미지 사이즈
 	receiveImage = vstpleoraGetImage(wholeImg.data, size);					// 이미지 받아오기
+	waitKey(5);
 	if( receiveImage != 1 ) return;
-		
-	SeparationBuffer(wholeImg.data, cameraBuf, width, height);	// 버퍼 나누기
+	SeparationBuffer(wholeImg.data, cameraBuf, IMAGE_WIDTH, IMAGE_HEIGHT);	// 버퍼 나누기
 	if( isColor ) 
 	{
-		for(int idx = 0; idx < 4; idx++)
+		for(int idx = 0; idx < CAMERA_NUMBER; idx++)
 			cvtColor( cameraImg[idx], imgColor[idx], CV_BayerGB2BGR );	// Opencv의 컬러 공간 변환을 사용
 	}
 }
@@ -132,19 +104,16 @@ int main(void)
 {
 	char chKey = 0;
 	int ret = 0;										// 카메라 연결의 리턴 값
-	puts("Bayer : B , Color : C\n");
-	puts("Connecting... ");
-	ret = OnCameraConnect();							// 카메라 연결, 파라메타 설정, 버퍼 채우기
+	puts("Bayer : B , Color : C\n Connecting... ");
 	
+	ret = OnCameraConnect();							// 카메라 연결, 파라메타 설정, 버퍼 채우기
 	if(ret != 1) 
 	{
 		puts("Connect fail");
 		return -1;									// 연결 실패 시
 	}
 	
-	puts("Camera Connect\n");
-	puts("Press 'Esc' to exit ");
-	stop_signal = false;							// 스레드 멈춤 신호
+	puts("Camera Connect\nPress 'Esc' to exit");
 	
 	while(1)
 	{
@@ -168,23 +137,11 @@ int main(void)
 			imshow("Camera3", imgColor[2]);
 			imshow("Camera4", imgColor[3]);
 		}
-		chKey = waitKey(8);
+		chKey = waitKey(10);
 		if( chKey == 27 ) break;
 		else if( chKey == 'c' )		isColor = true;
 		else if( chKey == 'b' )		isColor = false;
 	}
-	
-	if(videoWrite.isOpened()) videoWrite.release();
 	vstpleoraDestroy();								// 카메라 연결 해제
 	return 0;
 }
-
-//	시간 구하기, Main.h 파일에 주석처리 되어 있음
-//	startTime = system_clock::now();
-//	endTime = system_clock::now();
-//	if(!flag)
-//	{
-//		nanoseconds milli2 = duration_cast<nanoseconds>(endTime2-startTime2);
-//		std::cout << "이미지 받아오는 시간 : " << milli2.count() << endl;
-//		flag = true;
-//	}
