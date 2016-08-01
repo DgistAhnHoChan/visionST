@@ -23,6 +23,7 @@ using namespace chrono;
 
 #define IMAGE_WIDTH 1280
 #define IMAGE_HEIGHT 720
+#define BAYER_OVERHEADER 6
 #define CAMERA_NUMBER 2
 
 #define EXPOSURE_INIT_VALUE 480 // 480
@@ -31,19 +32,10 @@ using namespace chrono;
 #define GREEN_GAIN_INIT_VALUE (64*0.8) // (64*0.8)
 #define BLUE_GAIN_INIT_VALUE 64 // 64
 
-uchar *Buf;		// 전체 버퍼
-uchar *Buf1;	// 채널 1의 버퍼
-uchar *Buf2;	// 채널 2의 버퍼
-uchar *Buf3;	// 채널 3의 버퍼
-uchar *Buf4;	// 채널 4의 버퍼
-
-uchar *Buff;
-uchar *Buf5;	// 채널 1의 버퍼
-uchar *Buf6;	// 채널 2의 버퍼
-uchar *Buf7;	// 채널 3의 버퍼
-uchar *Buf8;	// 채널 4의 버퍼
-
-uchar *Buf11;
+Mat wholeImg;		// 전체 버퍼
+Mat cameraImg[4];
+uchar *cameraBuf[4];
+Mat imgColor[4];		
 
 #define IMAGE_WIDTH 1280
 #define IMAGE_HEIGHT 720
@@ -51,18 +43,17 @@ uchar *Buf11;
 
 
 int size;							// 이미지 크기 받아오는 함수
-int ViewColor;						// 프로그램 실행 시 Bayer or Color 설정해주는 함수 ( 0이면 흑백, 1이면 컬러)
+bool isColor;						// 프로그램 실행 시 Bayer or Color 설정해주는 함수 ( 0이면 흑백, 1이면 컬러)
 
 int width =IMAGE_WIDTH;				// 이미지 가로
 int height=IMAGE_HEIGHT;			// 이미지 세로
 
 int receiveImage;					// 이미지 받아오고 if 문 설정해주기 위한 변수
-bool onImageCheck = false;			// 쓰레드와 getImage 간의 정보 전달을 위해 필요한 bool 변수
 bool stop_signal = false;			// 쓰레드의 while 문을 stop 시키위 위해 필요한 bool 변수
 
 
-// VideoWriter videoWrite;				// 녹화 라이브러리 변수
-// VideoWriter videoWrite2;
+VideoWriter videoWrite;				// 녹화 라이브러리 변수
+VideoWriter videoWrite2;
 
 // 카메라 연결, 버퍼 나누기, 이미지 받아오는 함수, 연결 해제
 int initCamera(void);		
