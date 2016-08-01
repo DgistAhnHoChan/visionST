@@ -31,15 +31,19 @@ using namespace chrono;
 #define GREEN_GAIN_INIT_VALUE (64*0.8) // (64*0.8)
 #define BLUE_GAIN_INIT_VALUE 64 // 64
 
-unsigned char *Buf;		// 전체 버퍼
-unsigned char *Buf1;	// 채널 1의 버퍼
-unsigned char *Buf2;	// 채널 2의 버퍼
-unsigned char *Buf3;	// 채널 3의 버퍼
-unsigned char *Buf4;	// 채널 4의 버퍼
-unsigned char *Buf11;	// 각 채널의 컬러 변환(Bayer -> RGB)을 위한 버퍼
-unsigned char *Buf12;
-unsigned char *bufTemp; // 쓰레드에 넣기 위한 임시 버퍼
+uchar *Buf;		// 전체 버퍼
+uchar *Buf1;	// 채널 1의 버퍼
+uchar *Buf2;	// 채널 2의 버퍼
+uchar *Buf3;	// 채널 3의 버퍼
+uchar *Buf4;	// 채널 4의 버퍼
 
+uchar *Buff;
+uchar *Buf5;	// 채널 1의 버퍼
+uchar *Buf6;	// 채널 2의 버퍼
+uchar *Buf7;	// 채널 3의 버퍼
+uchar *Buf8;	// 채널 4의 버퍼
+
+uchar *Buf11;
 
 #define IMAGE_WIDTH 1280
 #define IMAGE_HEIGHT 720
@@ -57,31 +61,34 @@ bool onImageCheck = false;			// 쓰레드와 getImage 간의 정보 전달을 위해 필요한 b
 bool stop_signal = false;			// 쓰레드의 while 문을 stop 시키위 위해 필요한 bool 변수
 
 
-VideoWriter videoWrite;				// 녹화 라이브러리 변수
-VideoWriter videoWrite2;
+// VideoWriter videoWrite;				// 녹화 라이브러리 변수
+// VideoWriter videoWrite2;
 
-// 카메라 연결, 버퍼 나누기, 이미지 받아오는 함수
-int OnCameraConnect(void);	
-void SeparationBuffer(unsigned char *buf, unsigned char *buf1, unsigned char *buf2, unsigned char *buf3, unsigned char *buf4, int width, int height);
+// 카메라 연결, 버퍼 나누기, 이미지 받아오는 함수, 연결 해제
+int initCamera(void);		
+void SeparationBuffer(uchar *buf, uchar *buf1, uchar *buf2, uchar *buf3, uchar *buf4, int width, int height);
 void getImage(void);
+void releaseBuf(void);
 
 // 버퍼 쓰레드
 void bufThread(void);
 void bufThread2(void);
 
-// Bayer 처리, 버퍼 비우기
-unsigned char *Bayer2Bgr(unsigned char *src, int width, int height);
-unsigned char *Bayer2Bgr2(unsigned char *src, int width, int height);
-void Bayer2BgrFree(unsigned char *buf);
-
-// 프레임 체크
-void OnViewFramerate(void);
-
 // 파라메타 설정
 void cis_mt9m025_control(char slave_addr, int sub_addr, int data);
-int uart_cmd_3byte(unsigned char c, unsigned char addr, unsigned char data0, unsigned char data1);
+int uart_cmd_3byte(uchar c, uchar addr, uchar data0, uchar data1);
 void SetExposure(int pos);
 void SetGlobalGain(int pos);
 void SetRedGain(int pos);
 void SetGreenGain(int pos);
 void SetBlueGain(int pos);
+
+
+
+
+
+
+
+void SeparationBuffer2(uchar *buf, unsigned char *buf5, unsigned char *buf6, unsigned char *buf7, unsigned char *buf8, int width, int height);
+void Bayer2BgrFree(unsigned char *buf);
+unsigned char *Bayer2Bgr(unsigned char *src, int width, int height);

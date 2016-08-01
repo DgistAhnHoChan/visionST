@@ -407,3 +407,5 @@ TestVisionST/Debug/link.6932-rc.read.1.tlog
 TestVisionST/Debug/link.6932-rc.write.1.tlog
 TestVisionST/Debug/link.6932.read.1.tlog
 TestVisionST/Debug/link.6932.write.1.tlog
+*.jpg
+*.tlog
