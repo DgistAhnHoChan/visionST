@@ -23,16 +23,21 @@ using namespace chrono;
 #define BLUE_GAIN_INIT_VALUE 64			// 64
 
 Mat wholeImg;						// 전체 버퍼
-Mat cameraImg[4];					// 
-uchar *cameraBuf[4];				//
+Mat cameraImg;						//
+
 Mat imgColor[4];					//
+
+VideoWriter videoWrite1;			// 녹화 라이브러리 변수
+VideoWriter videoWrite2;
+VideoWriter videoWrite3;			
+VideoWriter videoWrite4;
 
 int size;							// 이미지 크기 받아오는 함수
 bool isColor;						// 프로그램 실행 시 Bayer or Color 설정해주는 함수 ( 0이면 흑백, 1이면 컬러)
 int receiveImage;					// 받아온 이미지의 출력 값
 
 int OnCameraConnect();				
-void SeparationBuffer(uchar *buf, uchar **cameraBuf, int width, int height);
+void SeparationBuffer(uchar *buf, uchar *cameraBuf, int width, int height);
 void getImage(void);
 
 // 파라메타 설정
